@@ -148,7 +148,6 @@ def pca_data_maker(X , n_components):
 def plot_pca_callback(X,n_components, target):
     try:
         x_trans = pca_data_maker(X, n_components)
-        print("ANA hna")
 
     except:
         st.error("A feature might not be supported, please select only numerical features")
@@ -161,7 +160,6 @@ def plot_pca_callback(X,n_components, target):
     for ind, column_pca in enumerate(columns_pca):
         tmp_pca_df[column_pca] = x_trans[: , ind]
 
-    print(tmp_pca_df)
 
 
     if x_trans.shape[1] == 2:
@@ -241,7 +239,6 @@ if st.session_state["actiave_page"] == "Home":
         df_shape, df_columns, explore_cleaning = st.columns(3)
         with df_shape:
             st.markdown("""<h3 class="dtlb-data-section1">Data types</h3>""", unsafe_allow_html=True)
-            # print(st.session_state["data"].dtypes)
             StickerComponent(st.session_state["data"].dtypes)
 
         with df_columns:
