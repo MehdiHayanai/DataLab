@@ -1,16 +1,20 @@
-from turtle import onclick
-from matplotlib.pyplot import axis
+from cProfile import label
+from turtle import color, width
+from matplotlib.pyplot import sca
 import streamlit as st
-import streamlit.components.v1 as components
+import yaml
 from Components import (
     MenuItem,
     info_container,
     StickerComponent,
 )
 import plotly.graph_objects as go
-import plotly.figure_factory as ff
 from io import StringIO
 import pandas as pd
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import MinMaxScaler
+import plotly.express as px
+
 
 
 # Data handling
@@ -28,7 +32,11 @@ def missing_values_styling(element):
 
 ## Styling
 
-st.set_page_config(layout="wide")
+st.set_page_config(
+     page_title="DataLab | GI-IADS tool",
+     page_icon="🔬",
+     layout="wide",
+ )
 
 
 def local_css(file_name):
@@ -72,14 +80,102 @@ def cleaning_callback(action_query, option_query, extra):
 
 
         else :
-            type_transorm = type(st.session_state["clean_df"][option_query][0])
-            extra = type_transorm(extra)
             try:
+                type_transorm = type(st.session_state["clean_df"][option_query][0])
+                extra = type_transorm(extra)
                 st.session_state["clean_df"][option_query].fillna(extra, inplace=True)
                 st.success("All null values in {} were replaced with {} successfully.".format(option_query, extra))            
             except:
                 st.error("Make sure that the data type fits the selected column.")
 
+
+def pca_callback(X, n_components, scale):
+    try:
+        if scale:
+            scaler = MinMaxScaler()
+            X = scaler.fit_transform(X)
+        pca = PCA(n_components)
+        pca.fit(X)
+
+    except:
+        st.error("A feature might not be supported, please select only numerical features")
+        st.error("Missing values can rise this error use the cleaning section to handle missing values")
+        return 
+    columns_pca = [f"PCA variance ratio {i}" for i in range(1,n_components+1)]
+    ratio_cumul = pca.explained_variance_ratio_.cumsum()
+    pca_df = pd.DataFrame(columns=columns_pca)
+    for col, val, cumul_val in zip(columns_pca, pca.explained_variance_ratio_, ratio_cumul):
+        pca_df[col] = [val *100, cumul_val *100]
+
+    st.write(pca_df)
+
+    x_trans = pca.transform(X)
+    st.session_state["tmp_pca_df"] = st.session_state["clean_df"].copy()
+    for ind, column_pca in enumerate(columns_pca):
+        st.session_state["tmp_pca_df"][column_pca] = x_trans[: , ind]
+
+
+
+    fig = go.Figure(data=[
+    # go.Pie(name='Variance', labels=pca_df.columns, values=pca.explained_variance_ratio_, hole=.3,)
+    # ])
+        go.Bar(name='Variance', x=pca_df.columns, y=pca_df.iloc[0])
+    ])
+    # Change the bar mode
+    fig.update_layout(barmode='group')
+    fig.add_trace(go.Scatter(
+        x=pca_df.columns,
+        y=pca_df.iloc[1],
+        name='Ratio cumulative sum',
+    ))
+    fig.update_layout(
+        autosize=False,
+        width=300,
+        height=320,
+
+    )
+
+    return fig
+
+def pca_data_maker(X , n_components):
+    scaler = MinMaxScaler()
+    X = scaler.fit_transform(X)
+    pca = PCA(n_components)
+    return pca.fit_transform(X)
+    
+
+
+
+def plot_pca_callback(X,n_components, target):
+    try:
+        x_trans = pca_data_maker(X, n_components)
+        print("ANA hna")
+
+    except:
+        st.error("A feature might not be supported, please select only numerical features")
+        st.error("Missing values can rise this error use the cleaning section to handle missing values")
+        return 
+    columns_pca = [f"PCA-{i}" for i in range(1,n_components+1)]
+    tmp_pca_df = st.session_state["clean_df"].copy()
+    
+
+    for ind, column_pca in enumerate(columns_pca):
+        tmp_pca_df[column_pca] = x_trans[: , ind]
+
+
+
+    if x_trans.shape[1] == 2:
+        fig = px.scatter(tmp_pca_df, x="PCA-1", y="PCA-2", color=target)
+
+    else: 
+        fig = px.scatter_3d(tmp_pca_df, x='PCA-1', y='PCA-2', z='PCA-3',
+                color=target)
+        
+
+    
+    return fig
+
+    
 
 ## Page handling
 
@@ -183,6 +279,8 @@ elif st.session_state["actiave_page"] == "Cleaning":
         data=[go.Bar(x=missing_analysis.col_name, y=missing_analysis.not_missing)],
         layout_title_text="The pourcentage of values presence",
     )
+    fig.update_layout(barmode='group')
+
 
     expolre_section, query_section, query_output = st.columns(3)
 
@@ -240,28 +338,94 @@ elif st.session_state["actiave_page"] == "Cleaning":
         if confirm_action:
             cleaning_callback(action_query, option_query, fill_na_value)
 
-    with st.expander("Cleaned DataFrame"):
-        st.write(st.session_state["clean_df"])
 
-    graphe_section = st.container()
-    with graphe_section:
- 
-        st.write("### DISTRIBUTION SECTION")
+    try:
+        graphe_section = st.container()
+        with graphe_section:
+    
+            st.write("### DISTRIBUTION SECTION")
+            data_frame_option = st.selectbox(
+                'Select your dataFrame',
+                ('Original', "New"))
 
-        try:
-            fig_option_distribution = go.Figure(data=[go.Histogram(x=df[option_query])])
-            fig_option_distribution.update_layout(
-                title=f"{option_query} Histogram",
-                xaxis_title=f"{option_query}",
-                yaxis_title="Count",
-                legend_title="Legend Title",
-                template="seaborn",
-                # color = 'indianred'
-            )
-            # fig_option_distribution.update_traces(opacity=0.75, color_discrete_sequence=['indianred'])
-            fig_option_distribution.update_traces(opacity=0.75)
-            st.plotly_chart(fig_option_distribution, use_container_width=True)
+            df = st.session_state["data"] if data_frame_option == "Original" else st.session_state["clean_df"]
+            template_plot = "seaborn" if data_frame_option == "Original" else "ggplot2"
+            try:
+                fig_option_distribution = go.Figure(data=[go.Histogram(x=df[option_query])])
+                fig_option_distribution.update_layout(
+                    title=f"{option_query} Histogram",
+                    xaxis_title=f"{option_query}",
+                    yaxis_title="Count",
+                    legend_title="Legend Title",
+                    template= template_plot,
+                )
+                fig_option_distribution.update_traces(opacity=0.75)
+                st.plotly_chart(fig_option_distribution, use_container_width=True)
 
-        except:
-            st.warning(f"{option_query} is not numerical")
+            except:
+                st.warning(f"This column was probably deleted")
 
+        col_original_df, col_cleaned_df = st.columns(2)
+        with col_original_df:
+            st.markdown("## Inital DataFrame")   
+            st.write(st.session_state["data"])
+        with col_cleaned_df:
+            st.markdown("## New DataFrame")   
+            st.write(st.session_state["clean_df"])
+    except:
+        st.warning("An error occurred, try changing your query option")
+
+elif st.session_state["actiave_page"] == "PCA":
+    pca_option, pca_features = st.columns(2)
+
+    st.session_state["set"]  = set(st.session_state["clean_df"].columns)
+
+    with pca_option:
+        st.markdown("""<h3 class="dtlb-data-section1">PCA Commandes</h3>""", unsafe_allow_html=True)
+        st.session_state["X"] = st.multiselect(
+        'Select your features',
+        st.session_state["set"],
+        [])
+
+        st.session_state["Y"] = st.selectbox(
+        'Target', st.session_state["set"] - set(st.session_state["X"]))
+        launch_pca = False
+        if len(st.session_state["X"]) > 0:
+            n_components = st.slider('Number of principal components', 0, len(st.session_state["X"]),len(st.session_state["X"]) )
+            scale = st.checkbox('Scale')
+
+            launch_pca = st.button("Start 🔴")
+
+    with pca_features:
+        if launch_pca:
+            X = st.session_state["clean_df"][st.session_state["X"]]
+            pca_fig = pca_callback(X, n_components, scale)
+            if pca_fig != None:
+                st.plotly_chart(pca_fig, use_container_width=True)
+            else: 
+                pass
+        else:
+            st.markdown("Waiting for you input ...")
+    
+    pca_view = st.expander("2D and 3D view")
+
+    with pca_view:
+        plot_dim_pca = st.radio("Select a ploting dimension", ("2D", "3D"))
+        st.markdown(plot_dim_pca)
+        pca_start = st.button("Launch view")
+        if pca_start:
+            try:
+                if plot_dim_pca == "2D" and st.session_state["clean_df"][st.session_state["X"]].shape[1] > 1 and st.session_state["Y"] != None:
+                    pca_2d = plot_pca_callback(st.session_state["clean_df"][st.session_state["X"]],int(plot_dim_pca[0]), st.session_state["Y"])
+                    st.plotly_chart(pca_2d, use_container_width=True)
+                elif  plot_dim_pca == "3D" and st.session_state["clean_df"][st.session_state["X"]].shape[1] > 3 and st.session_state["Y"] != None:
+                    pca_3d = plot_pca_callback(st.session_state["clean_df"][st.session_state["X"]],int(plot_dim_pca[0]), st.session_state["Y"])
+                    st.plotly_chart(pca_3d, use_container_width=True)
+                elif st.session_state["Y"] == None:
+                    st.warning("Select a target")
+                else:
+                    st.warning("Dimension is too low")
+            except:
+                st.info("Pick your features and target")
+
+    

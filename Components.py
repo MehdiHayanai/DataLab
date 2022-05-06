@@ -1,14 +1,11 @@
-import string
 from streamlit_option_menu import option_menu
-import streamlit.components.v1 as components
 import streamlit as st
-from torch import float64, int64
 
 
 def MenuItem():
     menu_item = option_menu(
         menu_title="DataLab",
-        menu_icon="exclude",
+        menu_icon="🔬",
         options=[
             "Home",
             "Cleaning",
