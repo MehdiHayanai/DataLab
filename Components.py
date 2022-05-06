@@ -96,8 +96,8 @@ def info_container():
         alt="Scikit learn logo",
     )
     maker_text = make_card_html(
-        "@MehdiHayanai",
-        "DataLab accelerates the data cleaning process and saves the user preference and habits related to data handling thus making the automatization of this step possible in the future.",
+        "@MehdiHayanai/DataLab",
+        "DataLab is open source and accessible from github.",
         "Github",
         "https://cdn.worldvectorlogo.com/logos/github-icon.svg",
         alt="Github logo",
