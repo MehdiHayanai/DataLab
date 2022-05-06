@@ -1,8 +1,5 @@
-from cProfile import label
-from turtle import color, width
-from matplotlib.pyplot import sca
+from time import time
 import streamlit as st
-import yaml
 from Components import (
     MenuItem,
     info_container,
@@ -52,6 +49,8 @@ if "actiave_page" not in st.session_state:
     st.session_state["actiave_page"] = "Home"
     st.session_state["data_state"] = 0
     st.session_state["data"] = pd.DataFrame()
+    st.session_state["tmp_pca_df"] = None
+    st.session_state["clean_df"] = None 
 
 
 
@@ -162,6 +161,7 @@ def plot_pca_callback(X,n_components, target):
     for ind, column_pca in enumerate(columns_pca):
         tmp_pca_df[column_pca] = x_trans[: , ind]
 
+    print(tmp_pca_df)
 
 
     if x_trans.shape[1] == 2:
@@ -255,7 +255,7 @@ if st.session_state["actiave_page"] == "Home":
             st.write("Click on the clean button to continue")
             st.dataframe(st.session_state["describe"], width=400)
 
-    st.title("You want to learn more about DataLab")
+    st.markdown("## Learn more about DataLab")
     data_lab_info_section = info_container()
 elif st.session_state["actiave_page"] != "Home" and st.session_state["data_state"] == 0:
     st.error("You need to load your data to access this page")
@@ -428,4 +428,19 @@ elif st.session_state["actiave_page"] == "PCA":
             except:
                 st.info("Pick your features and target")
 
+else :
+    try :
+        st.title("Final DataFrame")
+        tmp_pca_shape = st.session_state["tmp_pca_df"].shape
+        st.write(st.session_state["tmp_pca_df"])
+        st.caption(f"shape = {tmp_pca_shape}")
+        csv = convert_df(st.session_state["tmp_pca_df"])
+
+        st.download_button(
+            label="Download data as CSV",
+            data=csv,
+            file_name=f'DataLab{int(time())}.csv',
+        )
+    except:
+        st.warning("You haven't used the PCA section")
     

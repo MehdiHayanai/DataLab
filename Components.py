@@ -95,16 +95,16 @@ def info_container():
         "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Scikit_learn_logo_small.svg/1024px-Scikit_learn_logo_small.svg.png",
         alt="Scikit learn logo",
     )
-    # models_text = make_card_html(
-    #     "Models creation",
-    #     "DataLab accelerates the data cleaning process and saves the user preference and habits related to data handling thus making the automatization of this step possible in the future.",
-    #     "Scikit learn",
-    #     "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Scikit_learn_logo_small.svg/1024px-Scikit_learn_logo_small.svg.png",
-    #     alt="Scikit learn logo",
-    # )
+    maker_text = make_card_html(
+        "@MehdiHayanai",
+        "DataLab accelerates the data cleaning process and saves the user preference and habits related to data handling thus making the automatization of this step possible in the future.",
+        "Github",
+        "https://cdn.worldvectorlogo.com/logos/github-icon.svg",
+        alt="Github logo",
+    )
 
     new_container = CardItem(
-        [datacleaning_text, machine_text, reduction_text]
+        [datacleaning_text, machine_text, reduction_text,maker_text]
     )
     return new_container
 

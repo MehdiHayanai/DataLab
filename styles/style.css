@@ -247,3 +247,16 @@ html body div#root div div.withScreencast div div.stApp.streamlit-wide.css-fg4pb
     margin-top: 0px;
 }
 
+#root > div:nth-child(1) > div > div > div > div > section > div > div:nth-child(1) > div > div:nth-child(7) > div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+
+#root > div:nth-child(1) > div > div > div > div > section > div > div:nth-child(1) > div > div:nth-child(7) > div > button {
+    background: #ff4b4b;
+    font-size: 15px;
+    font-weight: 700;
+    color: white;
+}
