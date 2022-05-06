@@ -95,6 +95,7 @@ img {
 .cards-wrapper {
     display: flex;
     flex-wrap: wrap;
+    justify-content: space-evenly;
 }
 
 .css-keje6w {
@@ -105,10 +106,12 @@ img {
 }
 
 .css-1r6slb0 {
-    padding: 10px;
+    padding: 20px;
     display: flex;
     align-items: center;
+    justify-content: space-evenly;
     box-shadow: 5px 10px 20px -2px rgba(0, 0, 0, .2), 0 2px 2px 0 rgba(0, 0, 0, .14), 0 1px 5px 0 rgba(0, 0, 0, .12);
+    
 }
 
 
@@ -171,6 +174,12 @@ img {
     background-color: #21b6ae;
 }
 
+.dtlb-different {
+    color: #ff4b4b;
+}
+
+
+
 .streamlit-expanderHeader {
     font-size: 25px;
     font-weight: 500;
@@ -202,5 +211,33 @@ img {
 html body div#root div div.withScreencast div div.stApp.streamlit-wide.css-fg4pbf.eczokvf0 div.reportview-container.css-1wrcr25.eknhn3m0 section.main.css-1v3fvcr.eknhn3m1 div.block-container.css-18e3th9.eknhn3m2 div div.css-rx5q8k.e1tzin5v3 div.css-rncmk8.e1tzin5v0 div.css-1r6slb0.e1tzin5v2 div div.element-container.css-1e5imcs.e1tzin5v1 div.row-widget.stButton {
     display: flex;
     justify-content: center;
+    align-items: center;
+}
+
+
+/* Next step padding */
+#root > div:nth-child(1) > div > div > div > div > section > div > div:nth-child(1) > div > div:nth-child(5) > div:nth-child(3) > div:nth-child(1) > div{
+    padding: 10px;
+}
+
+
+
+/* Table centring and sizing */
+#root > div:nth-child(1) > div > div > div > div > section > div > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(2) > div:nth-child(1) > div > div:nth-child(2){
+    width: 100%;
+    height: 300px;
+    padding: 10px;
+    display:flex;
+    justify-content :center;
+    align-items: center;
+
+}
+
+#root > div:nth-child(1) > div > div > div > div > section > div > div:nth-child(1) > div > div.css-1fcdlhc.e1s6o5jp0 > ul > li > div.streamlit-expanderContent.st-ae.st-af.st-ag.st-ah.st-ai.st-aj.st-cq.st-ca.st-da.st-pt.st-ct.st-cu.st-as.st-at.st-bc.st-bd.st-cv.st-cw.st-dc.st-dd.st-am.st-pu.st-dg.st-b1.st-dh.st-b3.st-d2.st-d3.st-d4 > div:nth-child(1) > div > div {
+    width: 100%;
+    height: 300px;
+    padding: 5px;
+    display:flex;
+    justify-content :center;
     align-items: center;
 }

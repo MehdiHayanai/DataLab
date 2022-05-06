@@ -12,12 +12,10 @@ def MenuItem():
         options=[
             "Home",
             "Cleaning",
-            "Preprocessing",
-            "Dim-Reduction",
-            "Models",
+            "PCA",
             "Download",
         ],
-        icons=["house", "stars", "cpu", "dash-circle", "robot", "file-arrow-down",],
+        icons=["house-fill", "file-earmark-excel-fill", "dash-circle-fill", "file-arrow-down-fill",],
         styles={
             "container": {
                 "border-radius": "0px",
@@ -54,7 +52,7 @@ def make_card_html(main_text, description, lib_text, src=None, alt="logo"):
     html_text = f"""
             <div class="card">
             <div class="media"> <img
-                    src="{src}" alt="{alt}" width="1000" height="1000" alt="Pandas logo"> 
+                    src="{src}" alt="{alt}" width="1000" height="1000" alt="{alt}"> 
             </div>
             <div class="primary-title">
                 <div class="primary-text">{main_text}</div>
@@ -100,16 +98,16 @@ def info_container():
         "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Scikit_learn_logo_small.svg/1024px-Scikit_learn_logo_small.svg.png",
         alt="Scikit learn logo",
     )
-    models_text = make_card_html(
-        "Models creation",
-        "DataLab accelerates the data cleaning process and saves the user preference and habits related to data handling thus making the automatization of this step possible in the future.",
-        "Scikit learn",
-        "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Scikit_learn_logo_small.svg/1024px-Scikit_learn_logo_small.svg.png",
-        alt="Scikit learn logo",
-    )
+    # models_text = make_card_html(
+    #     "Models creation",
+    #     "DataLab accelerates the data cleaning process and saves the user preference and habits related to data handling thus making the automatization of this step possible in the future.",
+    #     "Scikit learn",
+    #     "https://upload.wikimedia.org/wikipedia/commons/thumb/0/05/Scikit_learn_logo_small.svg/1024px-Scikit_learn_logo_small.svg.png",
+    #     alt="Scikit learn logo",
+    # )
 
     new_container = CardItem(
-        [datacleaning_text, machine_text, reduction_text, models_text]
+        [datacleaning_text, machine_text, reduction_text]
     )
     return new_container
 

@@ -1,12 +1,11 @@
+from turtle import onclick
 from matplotlib.pyplot import axis
 import streamlit as st
 import streamlit.components.v1 as components
 from Components import (
     MenuItem,
     info_container,
-    NavigationComponent,
     StickerComponent,
-    DataShapeComponent,
 )
 import plotly.graph_objects as go
 import plotly.figure_factory as ff
@@ -37,7 +36,7 @@ def local_css(file_name):
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
-local_css("./style.css")
+local_css("./styles/style.css")
 
 
 ## Session State
@@ -45,6 +44,41 @@ if "actiave_page" not in st.session_state:
     st.session_state["actiave_page"] = "Home"
     st.session_state["data_state"] = 0
     st.session_state["data"] = pd.DataFrame()
+
+
+
+
+## Buttons callbacks 
+
+def cleaning_callback(action_query, option_query, extra):
+
+        if action_query == "Delete column":
+            try:
+                st.session_state["clean_df"].drop([option_query], axis=1, inplace=True)
+                st.success("{} was deleted successfully.".format(option_query))
+            except:
+                st.error("{} was already deleted.".format(option_query))
+
+        elif action_query == "Drop Null rows":
+            try:
+                st.session_state["clean_df"].dropna(inplace=True)
+                st.success("Null rows were deleted successfully.")
+            except:
+                st.error("An error occurred try again.")
+
+        elif action_query == "Reset":
+            st.session_state["clean_df"] = st.session_state["data"].copy()
+            st.success("Reseted successfully.")
+
+
+        else :
+            type_transorm = type(st.session_state["clean_df"][option_query][0])
+            extra = type_transorm(extra)
+            try:
+                st.session_state["clean_df"][option_query].fillna(extra, inplace=True)
+                st.success("All null values in {} were replaced with {} successfully.".format(option_query, extra))            
+            except:
+                st.error("Make sure that the data type fits the selected column.")
 
 
 ## Page handling
@@ -110,16 +144,17 @@ if st.session_state["actiave_page"] == "Home":
     if st.session_state["data_state"] == 1:
         df_shape, df_columns, explore_cleaning = st.columns(3)
         with df_shape:
-            st.header("Data types")
+            st.markdown("""<h3 class="dtlb-data-section1">Data types</h3>""", unsafe_allow_html=True)
             # print(st.session_state["data"].dtypes)
             StickerComponent(st.session_state["data"].dtypes)
 
         with df_columns:
-            st.header("Data Columns")
+            st.markdown("""<h3 class="dtlb-data-section">Data columns</h3>""", unsafe_allow_html=True)
+            
             StickerComponent(st.session_state["data"].columns)
         with explore_cleaning:
             lignes, columns = st.session_state["data"].shape
-            st.header("Next Step")
+            st.markdown("""<h3 class="">Next step</h3>""", unsafe_allow_html=True)
             st.write("DataFrame shape {} X {}".format(lignes, columns))
             st.write("Click on the clean button to continue")
             st.dataframe(st.session_state["describe"], width=400)
@@ -170,7 +205,6 @@ elif st.session_state["actiave_page"] == "Cleaning":
             # st.write("### Variance table")
             vals_data = st.session_state["describe"].iloc[2].to_list()
             vals_columns = st.session_state["data"].columns
-            print(len(vals_columns))
             vals_dataframe = pd.DataFrame()
             for col, val in zip(vals_columns, vals_data):
                 vals_dataframe[col] = [val, None]
@@ -184,7 +218,7 @@ elif st.session_state["actiave_page"] == "Cleaning":
         try:
             ## ADD %2f
             stats_element = [
-                "{} {}".format(
+                "{} {:.2f}".format(
                     mesure, st.session_state["describe"][option_query][mesure]
                 )
                 for mesure in ["count", "mean", "std", "max", "50%"]
@@ -195,20 +229,23 @@ elif st.session_state["actiave_page"] == "Cleaning":
 
     with query_output:
         action_query = st.selectbox(
-            "Query action", ["Delete column", "Fill Null values", "Drop Null rows"],
+            "Query action", ["Delete column", "Fill Null values", "Drop Null rows", "Reset"],
         )
+        fill_na_value = None
         if action_query == "Fill Null values":
-            st.write("Chno ndi daba")
+            fill_na_value = st.text_input('New value', '0')
+
         confirm_action = st.button("Confirme action")
 
-        if confirm_action and action_query == "Delete column":
-            st.session_state["clean_df"].drop([option_query], axis=1, inplace=True)
+        if confirm_action:
+            cleaning_callback(action_query, option_query, fill_na_value)
 
-    st.table(st.session_state["clean_df"])
+    with st.expander("Cleaned DataFrame"):
+        st.write(st.session_state["clean_df"])
 
     graphe_section = st.container()
     with graphe_section:
-
+ 
         st.write("### DISTRIBUTION SECTION")
 
         try:
