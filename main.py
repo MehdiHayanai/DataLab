@@ -1,6 +1,6 @@
 from time import time
 import streamlit as st
-from Components import (
+from ComponentsDataLab import (
     MenuItem,
     info_container,
     StickerComponent,
@@ -27,7 +27,7 @@ def missing_values_styling(element):
     return ["background-color: #f0ad4e" if i else "" for i in element]
 
 
-## Styling
+# Styling
 
 st.set_page_config(
      page_title="DataLab | GI-IADS tool",
@@ -55,7 +55,7 @@ if "actiave_page" not in st.session_state:
 
 
 
-## Buttons callbacks 
+# Buttons callbacks 
 
 def cleaning_callback(action_query, option_query, extra):
 
@@ -77,7 +77,6 @@ def cleaning_callback(action_query, option_query, extra):
             st.session_state["clean_df"] = st.session_state["data"].copy()
             st.success("Reseted successfully.")
 
-
         else :
             try:
                 type_transorm = type(st.session_state["clean_df"][option_query][0])
@@ -89,6 +88,7 @@ def cleaning_callback(action_query, option_query, extra):
 
 
 def pca_callback(X, n_components, scale):
+    """Scales the data using MinMax Scaler and returns a scatter plot."""
     try:
         if scale:
             scaler = MinMaxScaler()
@@ -97,8 +97,8 @@ def pca_callback(X, n_components, scale):
         pca.fit(X)
 
     except:
-        st.error("A feature might not be supported, please select only numerical features")
-        st.error("Missing values can rise this error use the cleaning section to handle missing values")
+        st.error("A feature might not be supported, please select numerical features only.")
+        st.error("Missing values can rise this error, use the cleaning section to handle missing values.")
         return 
     columns_pca = [f"PCA variance ratio {i}" for i in range(1,n_components+1)]
     ratio_cumul = pca.explained_variance_ratio_.cumsum()
@@ -116,8 +116,6 @@ def pca_callback(X, n_components, scale):
 
 
     fig = go.Figure(data=[
-    # go.Pie(name='Variance', labels=pca_df.columns, values=pca.explained_variance_ratio_, hole=.3,)
-    # ])
         go.Bar(name='Variance', x=pca_df.columns, y=pca_df.iloc[0])
     ])
     # Change the bar mode
@@ -169,7 +167,6 @@ def plot_pca_callback(X,n_components, target):
         fig = px.scatter_3d(tmp_pca_df, x='PCA-1', y='PCA-2', z='PCA-3',
                 color=target)
         
-
     
     return fig
 
@@ -187,7 +184,7 @@ if st.session_state["actiave_page"] == "Home":
 
     st.markdown(
         """<h2>Welcome to Da<span class="dtlb-different">Lab</span></h2>
-            <p>Build your first machine learning classifier, and set your workflow with DataLab.</p>
+            <p>DataLab is a class project made by <b>Mehdi Hayani Mechkouri</b> and <b>Salma Kassimi</b> </p>
         """,
         unsafe_allow_html=True,
     )
@@ -415,7 +412,7 @@ elif st.session_state["actiave_page"] == "PCA":
                 if plot_dim_pca == "2D" and st.session_state["clean_df"][st.session_state["X"]].shape[1] > 1 and st.session_state["Y"] != None:
                     pca_2d = plot_pca_callback(st.session_state["clean_df"][st.session_state["X"]],int(plot_dim_pca[0]), st.session_state["Y"])
                     st.plotly_chart(pca_2d, use_container_width=True)
-                elif  plot_dim_pca == "3D" and st.session_state["clean_df"][st.session_state["X"]].shape[1] > 3 and st.session_state["Y"] != None:
+                elif  plot_dim_pca == "3D" and st.session_state["clean_df"][st.session_state["X"]].shape[1] > 2 and st.session_state["Y"] != None:
                     pca_3d = plot_pca_callback(st.session_state["clean_df"][st.session_state["X"]],int(plot_dim_pca[0]), st.session_state["Y"])
                     st.plotly_chart(pca_3d, use_container_width=True)
                 elif st.session_state["Y"] == None:
