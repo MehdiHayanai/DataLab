@@ -184,7 +184,7 @@ if st.session_state["actiave_page"] == "Home":
 
     st.markdown(
         """<h2>Welcome to Da<span class="dtlb-different">Lab</span></h2>
-            <p>DataLab is a class project made by <b>Mehdi Hayani Mechkouri</b> and <b>Salma Kassimi</b> </p>
+            <p>DataLab is a GI-IADS class project made by <b>Mehdi Hayani Mechkouri</b> and <b>Salma Kassimi</b>.<br>GI-IADS : Industrial engineering / data science and artificial intelligence specialty.</p>
         """,
         unsafe_allow_html=True,
     )
