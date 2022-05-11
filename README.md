@@ -1,2 +1,3 @@
 # DataLab
- Machine learning/ Data minning project
+ Machine learning/ Data mining project
+
