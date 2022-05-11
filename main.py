@@ -1,4 +1,6 @@
+from operator import mod
 from time import time
+from requests import session
 import streamlit as st
 from ComponentsDataLab import (
     MenuItem,
@@ -11,6 +13,16 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 import plotly.express as px
+
+from sklearn.metrics import classification_report
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
+
 
 
 
@@ -25,7 +37,7 @@ def convert_df(df):
 # END DATA DOWNLOAD
 
 
-# STYLING
+##################################################################### STYLING #####################################################################
 
 st.set_page_config(
      page_title="DataLab | GI-IADS tool",
@@ -45,7 +57,7 @@ def local_css(file_name):
 
 local_css("./styles/style.css")
 
-# END STYLING
+##################################################################### STATES #####################################################################
 
 
 ## Session State
@@ -56,41 +68,53 @@ if "actiave_page" not in st.session_state:
     st.session_state["tmp_pca_df"] = None
     st.session_state["clean_df"] = None
     st.session_state["progress"] = None 
+    st.session_state["clean"] = False
+    st.session_state["models"] = ('SVC', 'RandomForestClassifier', 'Gaussian Naive Bayes', "Knn", "LogisticRegression")
 
 
 
 
-# Buttons callbacks 
+##################################################################### CALLBACKS #####################################################################
 
+## -> Cleaning
 def cleaning_callback(action_query, option_query, extra):
 
         if action_query == "Delete column":
             try:
                 st.session_state["clean_df"].drop([option_query], axis=1, inplace=True)
-                st.success("{} was deleted successfully.".format(option_query))
+                st.success("✔️ {} was deleted successfully.".format(option_query))
             except:
-                st.error("{} was already deleted.".format(option_query))
+                st.error("❌ {} was already deleted.".format(option_query))
 
         elif action_query == "Drop Null rows":
             try:
                 st.session_state["clean_df"].dropna(inplace=True)
-                st.success("Null rows were deleted successfully.")
+                st.success("✔️ Null rows were deleted successfully.")
             except:
-                st.error("An error occurred try again.")
+                st.error("❌ An error occurred try again.")
 
         elif action_query == "Reset":
             st.session_state["clean_df"] = st.session_state["data"].copy()
-            st.success("Reseted successfully.")
+            st.success("✔️ Reseted successfully.")
 
         else :
             try:
                 type_transorm = type(st.session_state["clean_df"][option_query][0])
                 extra = type_transorm(extra)
                 st.session_state["clean_df"][option_query].fillna(extra, inplace=True)
-                st.success("All null values in {} were replaced with {} successfully.".format(option_query, extra))            
+                st.success("✔️ All null values in {} were replaced with {} successfully.".format(option_query, extra))            
             except:
-                st.error("Make sure that the data type fits the selected column.")
+                st.error("❌ Make sure that the data type fits the selected column.")
 
+def cleaning_progress():
+    df_size = st.session_state["clean_df"].size
+    df_missing_count = st.session_state["clean_df"].isna().sum().sum()
+    progess_level = (df_size - df_missing_count) / df_size
+    st.session_state["clean"] = progess_level == 1.0
+    return progess_level
+
+
+## -> PCA
 
 def pca_callback(X, n_components, scale):
     """Scales the data using MinMax Scaler and returns a scatter plot."""
@@ -102,10 +126,10 @@ def pca_callback(X, n_components, scale):
         pca.fit(X)
 
     except:
-        st.error("A feature might not be supported, please select numerical features only.")
-        st.error("Missing values can rise this error, use the cleaning section to handle missing values.")
+        st.error("❌ A feature might not be supported, please select numerical features only.")
+        st.error("❌ Missing values can rise this error, use the cleaning section to handle missing values.")
         return 
-    columns_pca = [f"PCA variance ratio {i}" for i in range(1,n_components+1)]
+    columns_pca = [f"PCA-{i}" for i in range(1,n_components+1)]
     ratio_cumul = pca.explained_variance_ratio_.cumsum()
     pca_df = pd.DataFrame(columns=columns_pca)
     for col, val, cumul_val in zip(columns_pca, pca.explained_variance_ratio_, ratio_cumul):
@@ -153,8 +177,8 @@ def plot_pca_callback(X,n_components, target):
         x_trans = pca_data_maker(X, n_components)
 
     except:
-        st.error("A feature might not be supported, please select only numerical features")
-        st.error("Missing values can rise this error use the cleaning section to handle missing values")
+        st.error("❌ A feature might not be supported, please select only numerical features")
+        st.error("❌ Missing values can rise this error use the cleaning section to handle missing values")
         return 
     columns_pca = [f"PCA-{i}" for i in range(1,n_components+1)]
     tmp_pca_df = st.session_state["clean_df"].copy()
@@ -175,13 +199,30 @@ def plot_pca_callback(X,n_components, target):
     
     return fig
 
-    
+##################################################################### MODELS #####################################################################
 
-def cleaning_progress():
-    df_size = st.session_state["clean_df"].size
-    df_missing_count = st.session_state["clean_df"].isna().sum().sum()
-    progess_level = (df_size - df_missing_count) / df_size
-    return progess_level
+
+def get_model(model_option):
+    'SVC', 'RandomForestClassifier', 'Gaussian Naive Bayes', 'Knn', 'LogisticRegression'
+    if model_option == "SVC":
+        model = SVC()
+    
+    if model_option == "RandomForestClassifier":
+        model = RandomForestClassifier()
+
+    if model_option == "Gaussian Naive Bayes":
+        model = GaussianNB()
+
+    if model_option == "Knn":
+        model = KNeighborsClassifier()
+
+    if model_option == "LogisticRegression":
+        model = LogisticRegression()
+        
+    
+    return model
+
+
 
 ## DATALAB VIEW
 
@@ -227,10 +268,11 @@ if st.session_state["actiave_page"] == "Home":
                 st.session_state["data"] = pd.read_csv(uploaded_file)
                 st.session_state["describe"] = st.session_state["data"].describe()
                 st.session_state["clean_df"] = st.session_state["data"].copy()
+                st.session_state["tmp_pca_df"] = st.session_state["data"].copy()
                 st.session_state["data_state"] = 1
             except:
                 st.session_state["data_state"] = 0
-                st.error("Wrong format, DataLab suports only csv files.")
+                st.error("❌ Wrong format, DataLab suports only csv files.")
 
     with dataFrame_display_section:
         st.markdown(
@@ -267,7 +309,7 @@ if st.session_state["actiave_page"] == "Home":
 
 ##################################################################### NAVIGATION CLOSE #####################################################################
 elif st.session_state["actiave_page"] != "Home" and st.session_state["data_state"] == 0:
-    st.error("You need to load your data to access this page")
+    st.error("❌ You need to load your data to access this page")
 
 ##################################################################### CLEANING SECTION #####################################################################    
 elif st.session_state["actiave_page"] == "Cleaning":
@@ -292,8 +334,7 @@ elif st.session_state["actiave_page"] == "Cleaning":
     fig.update_layout(barmode='group')
     clean_df_shape = st.session_state["clean_df"].shape
     # END FIGURE 
-    # with st.container():
-    #     st.session_state["progress"] = st.progress(cleaning_progress())
+
 
 
     expolre_section, query_section, query_output = st.columns(3)
@@ -339,7 +380,7 @@ elif st.session_state["actiave_page"] == "Cleaning":
             stats_element.append(missing_text)
             StickerComponent(stats_element)
         except:
-            st.warning("Query is only available for numerical features")
+            st.warning("⚠️ Query is only available for numerical features")
 
     with query_output:
         action_query = st.selectbox(
@@ -392,7 +433,7 @@ elif st.session_state["actiave_page"] == "Cleaning":
             st.markdown("## New DataFrame")   
             st.write(st.session_state["clean_df"])
     except:
-        st.warning("An error occurred, try changing your query option")
+        st.warning("⚠️ An error occurred, try changing your query option")
 ##################################################################### PCA SECTION #####################################################################
 elif st.session_state["actiave_page"] == "PCA":
     pca_option, pca_features = st.columns(2)
@@ -404,7 +445,7 @@ elif st.session_state["actiave_page"] == "PCA":
         st.session_state["X"] = st.multiselect(
         'Select your features',
         st.session_state["set"],
-        [])
+        st.session_state["set"])
 
         st.session_state["Y"] = st.selectbox(
         'Target', st.session_state["set"] - set(st.session_state["X"]))
@@ -413,7 +454,8 @@ elif st.session_state["actiave_page"] == "PCA":
             n_components = st.slider('Number of principal components', 0, len(st.session_state["X"]),len(st.session_state["X"]) )
             scale = st.checkbox('Scale')
 
-            launch_pca = st.button("Start 🔴")
+            icon = "🟢" if st.session_state["clean"] else  "🔴" 
+            launch_pca = st.button(f"Start {icon}")
 
     with pca_features:
         if launch_pca:
@@ -441,11 +483,39 @@ elif st.session_state["actiave_page"] == "PCA":
                     pca_3d = plot_pca_callback(st.session_state["clean_df"][st.session_state["X"]],int(plot_dim_pca[0]), st.session_state["Y"])
                     st.plotly_chart(pca_3d, use_container_width=True)
                 elif st.session_state["Y"] == None:
-                    st.warning("Select a target")
+                    st.warning("⚠️ Select a target")
                 else:
-                    st.warning("Dimension is too low")
+                    st.warning("⚠️ Dimension is too low")
             except:
                 st.info("Pick your features and target")
+##################################################################### HOME SECTION #####################################################################
+elif st.session_state["actiave_page"] == "Models":
+    st.session_state["model_set"]  = set(st.session_state["tmp_pca_df"].columns)
+
+    if not st.session_state["clean"]:
+        st.warning("⚠️ Your data is not clean")
+    model_section, model_param_section = st.columns(2)
+    
+    with model_section:
+        st.write("### MODEL SECTION")
+        training_features = st.multiselect(
+            'Features',
+            st.session_state["model_set"],
+            st.session_state["model_set"])
+        training_target = st.selectbox(
+            'Target', st.session_state["model_set"] - set(training_features))
+        training_proportion = st.slider('Training size', 0, 100, 70)
+
+    with model_param_section:
+        st.write("### MODEL PARAMETERS")
+        model_option = st.selectbox(
+        'Select you model',
+        st.session_state["models"])
+
+        model = get_model(model_option)
+
+        st.write(model.get_params())
+
 ##################################################################### DOWNLOAD SECTION #####################################################################
 elif st.session_state["actiave_page"] == "Download":
     try :
@@ -461,5 +531,6 @@ elif st.session_state["actiave_page"] == "Download":
             file_name=f'DataLab{int(time())}.csv',
         )
     except:
-        st.warning("You haven't used the PCA section")
-    
+        st.warning("⚠️ You haven't used the PCA section")
+else :
+    st.error("❌ Where are you going ??")
