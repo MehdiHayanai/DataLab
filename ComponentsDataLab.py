@@ -10,9 +10,10 @@ def MenuItem():
             "Home",
             "Cleaning",
             "PCA",
+            "Models",
             "Download",
         ],
-        icons=["house-fill", "file-earmark-excel-fill", "dash-circle-fill", "file-arrow-down-fill",],
+        icons=["house-fill", "file-earmark-excel-fill", "dash-circle-fill", "robot", "file-arrow-down-fill",],
         styles={
             "container": {
                 "border-radius": "0px",

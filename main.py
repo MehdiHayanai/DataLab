@@ -14,7 +14,7 @@ import plotly.express as px
 
 
 
-# Data handling
+# DATA DOWNLOAD
 
 
 @st.cache
@@ -22,18 +22,20 @@ def convert_df(df):
     # IMPORTANT: Cache the conversion to prevent computation on every rerun
     return df.to_csv().encode("utf-8")
 
-
-def missing_values_styling(element):
-    return ["background-color: #f0ad4e" if i else "" for i in element]
+# END DATA DOWNLOAD
 
 
-# Styling
+# STYLING
 
 st.set_page_config(
      page_title="DataLab | GI-IADS tool",
      page_icon="🔬",
      layout="wide",
  )
+
+
+def missing_values_styling(element):
+    return ["background-color: #f0ad4e" if i else "" for i in element]
 
 
 def local_css(file_name):
@@ -43,6 +45,8 @@ def local_css(file_name):
 
 local_css("./styles/style.css")
 
+# END STYLING
+
 
 ## Session State
 if "actiave_page" not in st.session_state:
@@ -50,7 +54,8 @@ if "actiave_page" not in st.session_state:
     st.session_state["data_state"] = 0
     st.session_state["data"] = pd.DataFrame()
     st.session_state["tmp_pca_df"] = None
-    st.session_state["clean_df"] = None 
+    st.session_state["clean_df"] = None
+    st.session_state["progress"] = None 
 
 
 
@@ -172,14 +177,22 @@ def plot_pca_callback(X,n_components, target):
 
     
 
-## Page handling
+def cleaning_progress():
+    df_size = st.session_state["clean_df"].size
+    df_missing_count = st.session_state["clean_df"].isna().sum().sum()
+    progess_level = (df_size - df_missing_count) / df_size
+    return progess_level
+
+## DATALAB VIEW
 
 
 ## Navigation section
 
 st.session_state["actiave_page"] = MenuItem()
 
-## Infor about DataLab
+##################################################################### HOME SECTION #####################################################################
+
+
 if st.session_state["actiave_page"] == "Home":
 
     st.markdown(
@@ -251,10 +264,13 @@ if st.session_state["actiave_page"] == "Home":
 
     st.markdown("## Learn more about DataLab")
     data_lab_info_section = info_container()
+
+##################################################################### NAVIGATION CLOSE #####################################################################
 elif st.session_state["actiave_page"] != "Home" and st.session_state["data_state"] == 0:
     st.error("You need to load your data to access this page")
+
+##################################################################### CLEANING SECTION #####################################################################    
 elif st.session_state["actiave_page"] == "Cleaning":
-    # Cleaning
     ### ALGO SECTION ####
 
     # COPY OF DATA FRAME
@@ -274,6 +290,10 @@ elif st.session_state["actiave_page"] == "Cleaning":
         layout_title_text="The pourcentage of values presence",
     )
     fig.update_layout(barmode='group')
+    clean_df_shape = st.session_state["clean_df"].shape
+    # END FIGURE 
+    # with st.container():
+    #     st.session_state["progress"] = st.progress(cleaning_progress())
 
 
     expolre_section, query_section, query_output = st.columns(3)
@@ -315,6 +335,8 @@ elif st.session_state["actiave_page"] == "Cleaning":
                 )
                 for mesure in ["count", "mean", "std", "max", "50%"]
             ]
+            missing_text = "missing " + str(st.session_state["clean_df"][option_query].isna().sum())
+            stats_element.append(missing_text)
             StickerComponent(stats_element)
         except:
             st.warning("Query is only available for numerical features")
@@ -331,30 +353,33 @@ elif st.session_state["actiave_page"] == "Cleaning":
 
         if confirm_action:
             cleaning_callback(action_query, option_query, fill_na_value)
+        cleaning_pourcentage = int(cleaning_progress()*100)
+        st.write(f"Cleaning {cleaning_pourcentage}%")
+        st.session_state["progress"] = st.progress(cleaning_pourcentage)
+            
 
 
     try:
         graphe_section = st.container()
         with graphe_section:
-    
-            st.write("### DISTRIBUTION SECTION")
-            data_frame_option = st.selectbox(
-                'Select your dataFrame',
-                ('Original', "New"))
 
-            df = st.session_state["data"] if data_frame_option == "Original" else st.session_state["clean_df"]
-            template_plot = "seaborn" if data_frame_option == "Original" else "ggplot2"
+            st.write("### DISTRIBUTION SECTION")
+
+            template_plot = "plotly"
             try:
-                fig_option_distribution = go.Figure(data=[go.Histogram(x=df[option_query])])
+                fig_option_distribution = go.Figure()
+                
+                fig_option_distribution.add_trace(go.Histogram(x=st.session_state["clean_df"][option_query], name='Cleaned DataFrame'))
+                fig_option_distribution.add_trace(go.Histogram(x=st.session_state["data"][option_query], name='Original DataFrame'))
                 fig_option_distribution.update_layout(
                     title=f"{option_query} Histogram",
                     xaxis_title=f"{option_query}",
                     yaxis_title="Count",
-                    legend_title="Legend Title",
                     template= template_plot,
                 )
                 fig_option_distribution.update_traces(opacity=0.75)
                 st.plotly_chart(fig_option_distribution, use_container_width=True)
+
 
             except:
                 st.warning(f"This column was probably deleted")
@@ -368,7 +393,7 @@ elif st.session_state["actiave_page"] == "Cleaning":
             st.write(st.session_state["clean_df"])
     except:
         st.warning("An error occurred, try changing your query option")
-
+##################################################################### PCA SECTION #####################################################################
 elif st.session_state["actiave_page"] == "PCA":
     pca_option, pca_features = st.columns(2)
 
@@ -421,8 +446,8 @@ elif st.session_state["actiave_page"] == "PCA":
                     st.warning("Dimension is too low")
             except:
                 st.info("Pick your features and target")
-
-else :
+##################################################################### DOWNLOAD SECTION #####################################################################
+elif st.session_state["actiave_page"] == "Download":
     try :
         st.title("Final DataFrame")
         tmp_pca_shape = st.session_state["tmp_pca_df"].shape
