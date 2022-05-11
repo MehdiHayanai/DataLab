@@ -1,6 +1,4 @@
-from operator import mod
 from time import time
-from requests import session
 import streamlit as st
 from ComponentsDataLab import (
     MenuItem,
