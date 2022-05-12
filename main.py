@@ -1,3 +1,4 @@
+from email.policy import default
 from time import time
 import streamlit as st
 from ComponentsDataLab import (
@@ -245,6 +246,7 @@ if st.session_state["actiave_page"] == "Home":
 
     with data_loading_section:
 
+
         st.markdown(
             f"""<h2>Upload a csv file</h2>
         """,
@@ -271,6 +273,15 @@ if st.session_state["actiave_page"] == "Home":
             except:
                 st.session_state["data_state"] = 0
                 st.error("❌ Wrong format, DataLab suports only csv files.")
+            
+        default_data = st.button("Load default")
+        if default_data:
+            st.session_state["data"] = pd.read_csv("data/planets.csv")
+            st.session_state["describe"] = st.session_state["data"].describe()
+            st.session_state["clean_df"] = st.session_state["data"].copy()
+            st.session_state["tmp_pca_df"] = st.session_state["data"].copy()
+            st.session_state["data_state"] = 1
+                
 
     with dataFrame_display_section:
         st.markdown(

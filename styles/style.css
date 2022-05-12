@@ -260,3 +260,9 @@ html body div#root div div.withScreencast div div.stApp.streamlit-wide.css-fg4pb
     font-weight: 700;
     color: white;
 }
+
+#root > div:nth-child(1) > div > div > div > div > section > div > div:nth-child(1) > div > div:nth-child(4) > div:nth-child(1) > div:nth-child(1) > div > div:nth-child(3) > div{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
