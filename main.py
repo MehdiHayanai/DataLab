@@ -1,4 +1,5 @@
-from email.policy import default
+import base64
+import pickle
 from time import time
 import streamlit as st
 from ComponentsDataLab import (
@@ -12,16 +13,7 @@ import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import MinMaxScaler
 import plotly.express as px
-
-from sklearn.metrics import classification_report
-from sklearn.metrics import confusion_matrix
-from sklearn.metrics import accuracy_score
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.linear_model import LogisticRegression
-
+from ModelsCoponents import DataLabModel
 
 
 
@@ -68,7 +60,30 @@ if "actiave_page" not in st.session_state:
     st.session_state["clean_df"] = None
     st.session_state["progress"] = None 
     st.session_state["clean"] = False
+
+    # best model takes a key and returns a model and best score
     st.session_state["models"] = ('SVC', 'RandomForestClassifier', 'Gaussian Naive Bayes', "Knn", "LogisticRegression")
+    st.session_state["models_container"] = {}
+
+    for model_option in st.session_state["models"]:
+        st.session_state["models_container"][model_option] = DataLabModel(model_option)
+
+
+
+    # save model_features 
+    st.session_state["X_training"] = {}
+    st.session_state["y_training"] = {}
+
+    st.session_state["previous_target"] = None
+    st.session_state["X_df"] = None
+    st.session_state["Y_df"] = None
+
+
+    # model score plot
+
+    st.session_state["models_score"] = None
+    st.session_state["models_score_list"] = [0 for _ in st.session_state["models"]]
+
 
 
 
@@ -202,26 +217,58 @@ def plot_pca_callback(X,n_components, target):
 
 
 def get_model(model_option):
-    'SVC', 'RandomForestClassifier', 'Gaussian Naive Bayes', 'Knn', 'LogisticRegression'
-    if model_option == "SVC":
-        model = SVC()
-    
-    if model_option == "RandomForestClassifier":
-        model = RandomForestClassifier()
-
-    if model_option == "Gaussian Naive Bayes":
-        model = GaussianNB()
-
-    if model_option == "Knn":
-        model = KNeighborsClassifier()
-
-    if model_option == "LogisticRegression":
-        model = LogisticRegression()
+    # 'SVC', 'RandomForestClassifier', 'Gaussian Naive Bayes', 'Knn', 'LogisticRegression'
+    model_object = DataLabModel(model_option)
         
     
-    return model
+    return model_object
+
+def reset_models():
+    for model_option in st.session_state["models"]:
+        st.session_state["models_container"][model_option] = DataLabModel(model_option)
 
 
+def plot_models_scores():
+    models_names = st.session_state["models"]
+ 
+    models_score = []
+    models_text = []
+    colors = ["#868ff9" for _ in models_names]
+
+    for model_option in models_names:
+        model_object = st.session_state["models_container"][model_option].model
+        if st.session_state["models_container"][model_option].model != None:
+            score_value = int(model_object.best_score * 100)
+            score_text = str(score_value) + "%"
+            models_score.append(score_value)
+            models_text.append(score_text)
+        else:
+            models_score.append(0)
+            models_text.append("0%")
+
+    st.session_state["models_score_list"] = models_score
+    max_score = max(models_score)
+    max_index = models_score.index(max_score)
+    colors[max_index] = "#ef7d6a"
+    
+    
+
+
+    st.session_state["models_score"] = go.Figure()
+    st.session_state["models_score"].add_trace(go.Bar(x=models_names, y=models_score, text=models_text, marker_color=colors))
+    st.session_state["models_score"].update_layout(barmode='group')
+
+    st.plotly_chart(st.session_state["models_score"], use_container_width=True)
+
+
+def download_model_pickle(model_option, score):
+    model_file_name = "DataLab-model-{}-{}.sav".format(model_option, score)
+    model = st.session_state["models_container"][model_option].model.model
+    output_model = pickle.dumps(model)
+    b64 = base64.b64encode(output_model).decode()
+    href = f'<a href="data:file/output_model;base64,{b64}" download="{model_file_name}">Download Trained Model File</a>'
+    st.markdown(href, unsafe_allow_html=True)
+    # pickle.dump(model, open(model_file_name, 'wb'))
 
 ## DATALAB VIEW
 
@@ -274,7 +321,7 @@ if st.session_state["actiave_page"] == "Home":
                 st.session_state["data_state"] = 0
                 st.error("❌ Wrong format, DataLab suports only csv files.")
             
-        default_data = st.button("Load default")
+        default_data = st.button("Load default Dataset")
         if default_data:
             st.session_state["data"] = pd.read_csv("data/planets.csv")
             st.session_state["describe"] = st.session_state["data"].describe()
@@ -497,38 +544,100 @@ elif st.session_state["actiave_page"] == "PCA":
                     st.warning("⚠️ Dimension is too low")
             except:
                 st.info("Pick your features and target")
-##################################################################### HOME SECTION #####################################################################
+##################################################################### MODELS SECTION #####################################################################
 elif st.session_state["actiave_page"] == "Models":
     st.session_state["model_set"]  = set(st.session_state["tmp_pca_df"].columns)
 
     if not st.session_state["clean"]:
         st.warning("⚠️ Your data is not clean")
+
+    else :
+        if "PCA-1" not in  st.session_state["tmp_pca_df"].columns:
+            st.session_state["tmp_pca_df"] = st.session_state["clean_df"].copy()
+
     model_section, model_param_section = st.columns(2)
     
     with model_section:
-        st.write("### MODEL SECTION")
-        training_features = st.multiselect(
+        st.write("### DATA PARAMETRES")
+        st.session_state["X_training"] = st.multiselect(
             'Features',
             st.session_state["model_set"],
             st.session_state["model_set"])
-        training_target = st.selectbox(
-            'Target', st.session_state["model_set"] - set(training_features))
+            
+        st.session_state["y_training"] = st.selectbox(
+            'Target', set(st.session_state["model_set"]) - set(st.session_state["X_training"]))
         training_proportion = st.slider('Training size', 0, 100, 70)
+        st.session_state["X_df"] = st.session_state["tmp_pca_df"][st.session_state["X_training"]]
+
+        if st.session_state["y_training"] != None:
+            st.session_state["Y_df"] = st.session_state["tmp_pca_df"][st.session_state["y_training"]]
+
+        if st.session_state["y_training"] != st.session_state["previous_target"] and st.session_state["previous_target"] != None:
+            st.warning("⚠️ target changed your models will be lost last target = {}".format(st.session_state["previous_target"]))
+        
 
     with model_param_section:
-        st.write("### MODEL PARAMETERS")
+        st.write("### MODEL SECTION")
+
+
         model_option = st.selectbox(
         'Select you model',
         st.session_state["models"])
+        launch_model = st.button("Create model")
 
-        model = get_model(model_option)
+        
+        
+        if launch_model and st.session_state["y_training"] != None:
+            try:
 
-        st.write(model.get_params())
+                if st.session_state["y_training"] != st.session_state["previous_target"]:
+                    st.session_state["previous_target"] = st.session_state["y_training"]
+                    reset_models()
+
+                if st.session_state["models_container"][model_option].model != None:
+                    model_object = st.session_state["models_container"][model_option].model
+                else :
+                    model_object = get_model(model_option)
+
+
+                old_best = model_object.best_score
+
+                # saves best score if edited see fit documentation
+
+                model_score = model_object.fit(st.session_state["X_df"], st.session_state["Y_df"], training_proportion/100)
+                model_score_text = str(int(model_score * 100)) + "%"
+
+
+                delta_val = int((model_score - old_best) * 100)
+                delta_text = str(delta_val) + "%"
+
+                if delta_val > 0:
+                    st.session_state["models_container"][model_option].model = model_object
+
+
+                st.metric(label="Accuracy", value=model_score_text, delta=delta_text)
+
+            except:
+                st.error("❌ Your target is not categorical")
+        
+        elif st.session_state["y_training"] == None:
+
+            st.warning("⚠️ Please select a target feature")
+
+    plot_models_scores()
+
+    
+    
+
+
+
 
 ##################################################################### DOWNLOAD SECTION #####################################################################
 elif st.session_state["actiave_page"] == "Download":
+    
     try :
-        st.title("Final DataFrame")
+        st.write("### CLEANED DATAFRAME")
+
         tmp_pca_shape = st.session_state["tmp_pca_df"].shape
         st.write(st.session_state["tmp_pca_df"])
         st.caption(f"shape = {tmp_pca_shape}")
@@ -541,5 +650,29 @@ elif st.session_state["actiave_page"] == "Download":
         )
     except:
         st.warning("⚠️ You haven't used the PCA section")
+
+    models_donwload_section = st.container()
+    with models_donwload_section:
+        st.write("### DOWNLOAD MODELS")
+        st.markdown("""Models to predict <b>{}<b>""".format(st.session_state["previous_target"]), unsafe_allow_html=True)
+        models_section_columns = st.columns(len(st.session_state["models"]))
+        
+        # no need for iterator
+        indx = 0
+        for col, model_name in zip(models_section_columns,st.session_state["models"]):
+            with col:
+                
+                st.write(model_name)
+                score_value = st.session_state["models_score_list"][indx]
+                indx += 1
+                st.write("score {}%".format(score_value))
+                download_model = st.button("Get model link", key="{}".format(model_name+str(score_value)))
+                if download_model and score_value !=0:
+                    st.write("Your model is ready 👇🏻")
+                    download_model_pickle(model_name, score_value)
+                elif score_value == 0:
+                    st.error("❌ You can't download this The model's 'score is null'")
+
+
 else :
     st.error("❌ Where are you going ??")
