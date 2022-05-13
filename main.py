@@ -545,6 +545,10 @@ elif st.session_state["actiave_page"] == "PCA":
             except:
                 st.info("Pick your features and target")
 ##################################################################### MODELS SECTION #####################################################################
+elif st.session_state["actiave_page"] == "Models" and not st.session_state["clean"]:
+    if not st.session_state["clean"]:
+        st.warning("⚠️ Your data is not clean")
+
 elif st.session_state["actiave_page"] == "Models":
     st.session_state["model_set"]  = set(st.session_state["tmp_pca_df"].columns)
 
