@@ -548,7 +548,6 @@ elif st.session_state["actiave_page"] == "PCA":
 elif st.session_state["actiave_page"] == "Models" and not st.session_state["clean"]:
     if not st.session_state["clean"]:
         st.warning("⚠️ Your data is not clean")
-
 elif st.session_state["actiave_page"] == "Models":
     st.session_state["model_set"]  = set(st.session_state["tmp_pca_df"].columns)
 
@@ -675,7 +674,7 @@ elif st.session_state["actiave_page"] == "Download":
                     st.write("Your model is ready 👇🏻")
                     download_model_pickle(model_name, score_value)
                 elif score_value == 0:
-                    st.error("❌ You can't download this The model's 'score is null'")
+                    st.error("❌ You can't download this model's 'score is null'")
 
 
 else :
