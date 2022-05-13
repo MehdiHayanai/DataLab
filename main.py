@@ -674,7 +674,7 @@ elif st.session_state["actiave_page"] == "Download":
                     st.write("Your model is ready 👇🏻")
                     download_model_pickle(model_name, score_value)
                 elif score_value == 0:
-                    st.error("❌ You can't download this model's 'score is null'")
+                    st.error("❌ You can't download this model 'score is null'")
 
 
 else :
