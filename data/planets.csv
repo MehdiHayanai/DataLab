@@ -1,4 +1,4 @@
-method,number,orbital_period,mass,distance,year
+method,number,velocity,pressure,distance,tool
 Radial Velocity,1,269.3,7.1,77.4,2006
 Radial Velocity,1,874.774,2.21,56.95,2008
 Radial Velocity,1,763.0,2.6,19.84,2011
