@@ -322,7 +322,7 @@ if st.session_state["actiave_page"] == "Home":
 
         default_data = st.button("Load default Dataset")
         if default_data:
-            st.session_state["data"] = pd.read_csv("data/planets.csv")
+            st.session_state["data"] = pd.read_csv("data/iris.csv")
             st.session_state["describe"] = st.session_state["data"].describe()
             st.session_state["clean_df"] = st.session_state["data"].copy()
             st.session_state["tmp_pca_df"] = st.session_state["data"].copy()
