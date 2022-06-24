@@ -267,7 +267,6 @@ def download_model_pickle(model_option, score):
     b64 = base64.b64encode(output_model).decode()
     href = f'<a href="data:file/output_model;base64,{b64}" download="{model_file_name}">Download Trained Model File</a>'
     st.markdown(href, unsafe_allow_html=True)
-    # pickle.dump(model, open(model_file_name, 'wb'))
 
 
 ## DATALAB VIEW
