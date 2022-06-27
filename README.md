@@ -7,4 +7,9 @@ https://share.streamlit.io/mehdihayanai/datalab/main/main.py
 
 To deploy it localy use the following cammand 
 
-''' HHHH '''
+> pip install -r requirements.tx 
+
+To run DataLab  use :
+
+> streamlit run main.py
+> 
